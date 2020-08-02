@@ -1,0 +1,22 @@
+{
+    "name": "proxer-export",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "ts-node src/index"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "axios": "^0.19.2",
+        "fs-extra": "^9.0.1",
+        "xmlbuilder2": "^2.2.0"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^9.0.1",
+        "@types/node": "^14.0.27",
+        "ts-node": "^8.10.2",
+        "typescript": "^3.9.7"
+    }
+}
