@@ -6,7 +6,7 @@ export class JikanApi {
 
     async searchAnime(name: string): Promise<JikanResult[]> {
         const response = await axios.default.get(
-            `${this.baseUrl}/public/v3/search/anime?q=${name}`
+            `${this.baseUrl}/search/anime?q=${encodeURIComponent(name)}&limit=10`
         );
 
         const { results } = response.data as JikanResponse;

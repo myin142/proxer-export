@@ -4,11 +4,11 @@ export interface AnimeAdapter<T> {
 }
 
 export interface Anime {
-    status: AnimeStatus;
+    status?: AnimeStatus;
     name: string;
-    episodes: number;
-    watchedEpisodes: number;
-    type: AnimeType;
+    episodes?: number;
+    watchedEpisodes?: number;
+    type?: AnimeType;
 }
 
 export enum AnimeStatus {

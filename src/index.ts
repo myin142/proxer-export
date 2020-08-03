@@ -10,7 +10,7 @@ readFile<ProxerExport>(argv[2]).then((json) => {
     }
 
     const animes = new ProxerAdapter().import(json);
-    new MyAnimeListAdapter('http://localhost:9000').export(animes);
+    new MyAnimeListAdapter('http://localhost:9000/public/v3').export(animes);
 });
 
 async function readFile<T>(file: string): Promise<T> {
