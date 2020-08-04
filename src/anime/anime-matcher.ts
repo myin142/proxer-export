@@ -1,4 +1,4 @@
-import { Anime } from './anime';
+import { Anime, AnimeType } from './anime';
 
 /**
  * Matches anime by their name and other possible information
@@ -17,7 +17,11 @@ export class AnimeMatcher {
 
     // These conditions has to be true to even consider further processing
     private static possibleAnimes(animes: Anime[], anime: Anime): Anime[] {
-        return animes.filter((a) => a.episodes === anime.episodes && a.type === anime.type);
+        return animes.filter(
+            (a) =>
+                (Math.abs(a.episodes - anime.episodes) <= 1 || a.episodes === 0) &&
+                a.type === anime.type
+        );
     }
 
     private static mapSpecialCharacters(anime: Anime): Anime {
@@ -34,21 +38,25 @@ export class AnimeMatcher {
     private extraMatchers: AnimeMatcherType[];
     private allMatchers: AnimeMatcherType[];
 
+    private strangeCharacters = ['†', '†'];
+
     private constructor(private animes: Anime[]) {
         this.defaultMatchers = [this.exactMatch, this.startsWith];
         this.extraMatchers = [
+            ...this.defaultMatchers,
             this.matchIgnoreSpecialCharacters.bind(this),
             this.matchSpaceBetweenCapitalized.bind(this),
             this.matchCombinedSpecialCharacters.bind(this),
             this.matchAllCombinedName.bind(this),
+            this.matchWithoutStrangeCharacters.bind(this),
             this.matchExclamationAsSeasons.bind(this),
             this.matchSeasonAliases.bind(this),
-            this.matchNameParts.bind(this),
+            this.matchIgnoreBracketValues.bind(this),
         ];
         this.allMatchers = [
-            ...this.defaultMatchers,
             ...this.extraMatchers,
-            this.matchColonSections.bind(this),
+            // this.matchColonSections.bind(this),
+            this.matchNameParts.bind(this),
         ];
     }
 
@@ -114,7 +122,7 @@ export class AnimeMatcher {
 
     private normalizeAnimeName(name: string): string {
         return name
-            .split(/-|:|\s+/g)
+            .split(/-|:|\s+|\./g)
             .map((x) => x.trim())
             .filter((x) => !!x)
             .join(' ');
@@ -152,7 +160,29 @@ export class AnimeMatcher {
             );
         }
 
-        return { anime: match.anime, guessed: true };
+        return match;
+    }
+
+    private matchWithoutStrangeCharacters(animes: Anime[], anime: Anime): AnimeMatch {
+        const withoutStrange = animes.map((a) => this.removeStrangeCharacters(a));
+        let match = this.applyMatchers(withoutStrange, this.removeStrangeCharacters(anime), [
+            ...this.defaultMatchers,
+            this.matchAllCombinedName.bind(this),
+        ]);
+
+        if (match.anime) {
+            match.anime = animes.find(
+                (a) => this.removeStrangeCharacters(a).name === match.anime.name
+            );
+        }
+
+        return match;
+    }
+
+    private removeStrangeCharacters(anime: Anime): Anime {
+        let result = anime.name;
+        this.strangeCharacters.forEach((c) => (result = result.replace(c, '')));
+        return { ...anime, name: result };
     }
 
     private matchSeasonAliases(animes: Anime[], anime: Anime): AnimeMatch {
@@ -207,18 +237,13 @@ export class AnimeMatcher {
         return { anime: match, guessed: true };
     }
 
-    private matchNameParts(animes: Anime[], anime: Anime): AnimeMatch {
-        const parts = this.normalizeAnimeName(anime.name).split(' ');
-        let match = null;
-        if (parts.length > 5) {
-            match = animes.find((a) => {
-                const set = new Set(this.normalizeAnimeName(a.name).split(' '));
-                parts.forEach((x) => set.add(x));
-
-                return set.size - 2 <= parts.length;
-            });
-        }
-
+    private matchIgnoreBracketValues(animes: Anime[], anime: Anime): AnimeMatch {
+        const withoutBrackets = anime.name.replace(/\(.*?\)/g, '').trim();
+        const match = this.applyMatchers(
+            animes,
+            { ...anime, name: withoutBrackets },
+            this.defaultMatchers
+        ).anime;
         return { anime: match, guessed: true };
     }
 
@@ -228,6 +253,22 @@ export class AnimeMatcher {
             .map((a) => this.applyMatchers(animes, { ...anime, name: a }, this.extraMatchers).anime)
             .find((x) => !!x);
         return { anime: found, guessed: true };
+    }
+
+    private matchNameParts(animes: Anime[], anime: Anime): AnimeMatch {
+        const parts = this.normalizeAnimeName(anime.name).split(' ');
+        let match = null;
+        if (parts.length > 8) {
+            match = animes.find((a) => {
+                const animeParts = this.normalizeAnimeName(a.name).split(' ');
+                const set = new Set(animeParts);
+                parts.forEach((x) => set.add(x));
+
+                return set.size - 1 <= parts.length && animeParts.length === parts.length;
+            });
+        }
+
+        return { anime: match, guessed: true };
     }
 }
 

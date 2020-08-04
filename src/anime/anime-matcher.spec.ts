@@ -146,7 +146,29 @@ describe('Anime Matcher', () => {
             })
         ).toEqual({
             anime: { name: 'Nagi no Asu kara' },
+            guessed: false,
+        });
+    });
+
+    it('match ignore bracket values', () => {
+        expect(
+            AnimeMatcher.findBestMatch([{ name: 'Ryuugajou Nanana no Maizoukin' }], {
+                name: 'Ryuugajou Nanana no Maizoukin (2014)',
+            })
+        ).toEqual({
+            anime: { name: 'Ryuugajou Nanana no Maizoukin' },
             guessed: true,
+        });
+    });
+
+    it('match strange characters', () => {
+        expect(
+            AnimeMatcher.findBestMatch([{ name: 'Shin Koihime†Musou' }], {
+                name: 'Shin Koihime Musou',
+            })
+        ).toEqual({
+            anime: { name: 'Shin Koihime†Musou' },
+            guessed: false,
         });
     });
 });

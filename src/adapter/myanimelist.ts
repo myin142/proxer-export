@@ -14,7 +14,6 @@ export class MyAnimeListAdapter implements AnimeAdapter<any> {
     async export(animes: Anime[]): Promise<void> {
         const malAnimes = await Promise.all(
             animes
-                .slice(250, 300)
                 .map(async (a) => {
                     await new Promise((r) => setTimeout(r, 4000));
                     return this.toMyAnimeListAnime(a);
