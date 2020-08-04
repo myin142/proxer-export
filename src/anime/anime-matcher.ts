@@ -1,7 +1,5 @@
 import { Anime } from './anime';
 
-type AnimeMatcherType = (aa: Anime[], a: Anime) => Anime;
-
 /**
  * Matches anime by their name and other possible information
  */
@@ -44,6 +42,7 @@ export class AnimeMatcher {
             this.matchCombinedSpecialCharacters.bind(this),
             this.matchExclamationAsSeasons.bind(this),
             this.matchSeasonAliases.bind(this),
+            this.matchNameParts.bind(this),
         ];
         this.allMatchers = [
             ...this.defaultMatchers,
@@ -59,43 +58,47 @@ export class AnimeMatcher {
     private applyMatchers(
         animes: Anime[],
         anime: Anime,
-        matchers: ((aa: Anime[], a: Anime) => Anime)[] = this.allMatchers
+        matchers: AnimeMatcherType[] = this.allMatchers
     ): AnimeMatch {
-        let found = null;
-        let guessed = false;
+        let found: AnimeMatch = {};
 
         for (let i = 0; i < matchers.length; i++) {
             const matcher = matchers[i];
             found = matcher(animes, anime);
 
-            if (found) {
-                guessed = i > 0;
+            if (found.anime) {
                 break;
             }
         }
 
-        return { anime: found, guessed };
+        return found;
     }
 
-    private exactMatch(animes: Anime[], { name }: Anime): Anime {
-        return animes.find((a) => a.name.toLowerCase() === name.toLowerCase());
+    private exactMatch(animes: Anime[], { name }: Anime): AnimeMatch {
+        return {
+            anime: animes.find((a) => a.name.toLowerCase() === name.toLowerCase()),
+            guessed: false,
+        };
     }
 
-    private startsWith(animes: Anime[], { name }: Anime): Anime {
-        return animes.find((a) => a.name.toLowerCase().startsWith(name.toLowerCase()));
+    private startsWith(animes: Anime[], { name }: Anime): AnimeMatch {
+        return {
+            anime: animes.find((a) => a.name.toLowerCase().startsWith(name.toLowerCase())),
+            guessed: true,
+        };
     }
 
-    private matchIgnoreSpecialCharacters(animes: Anime[], anime: Anime): Anime {
+    private matchIgnoreSpecialCharacters(animes: Anime[], anime: Anime): AnimeMatch {
         const animeWithoutSpecial = this.normalizeAnime(anime);
         const animesWithoutSpecial = animes.map((a) => this.normalizeAnime(a));
         let found = this.applyMatchers(
             animesWithoutSpecial,
             animeWithoutSpecial,
             this.defaultMatchers
-        ).anime;
+        );
 
-        if (found) {
-            found = animes.find((a) => this.normalizeAnimeName(a.name) === found.name);
+        if (found.anime) {
+            found.anime = animes.find((a) => this.normalizeAnimeName(a.name) === found.anime.name);
         }
 
         return found;
@@ -116,21 +119,24 @@ export class AnimeMatcher {
             .join(' ');
     }
 
-    private matchSpaceBetweenCapitalized(animes: Anime[], anime: Anime): Anime {
+    private matchSpaceBetweenCapitalized(animes: Anime[], anime: Anime): AnimeMatch {
         const spaced = anime.name.replace(/([a-z])([A-Z])/g, '$1 $2');
-        return this.applyMatchers(animes, { ...anime, name: spaced }, this.defaultMatchers).anime;
+        return this.applyMatchers(animes, { ...anime, name: spaced }, this.defaultMatchers);
     }
 
-    private matchCombinedSpecialCharacters(animes: Anime[], anime: Anime): Anime {
+    private matchCombinedSpecialCharacters(animes: Anime[], anime: Anime): AnimeMatch {
         const combinedSpecial = anime.name.replace(/-/g, '');
-        return this.applyMatchers(animes, { ...anime, name: combinedSpecial }, this.defaultMatchers)
-            .anime;
+        return this.applyMatchers(
+            animes,
+            { ...anime, name: combinedSpecial },
+            this.defaultMatchers
+        );
     }
 
-    private matchSeasonAliases(animes: Anime[], anime: Anime): Anime {
+    private matchSeasonAliases(animes: Anime[], anime: Anime): AnimeMatch {
         const aliases = ['2nd Season', 'II', '2'];
 
-        return aliases
+        const found = aliases
             .map((a) => {
                 if (anime.name.endsWith(a)) {
                     return aliases
@@ -148,18 +154,22 @@ export class AnimeMatcher {
             })
             .reduce((x, y) => x.concat(y), [])
             .find((x) => !!x);
+
+        return { anime: found, guessed: true };
     }
 
-    private matchExclamationAsSeasons(animes: Anime[], anime: Anime): Anime {
+    private matchExclamationAsSeasons(animes: Anime[], anime: Anime): AnimeMatch {
         const parts = anime.name.split(' ');
         const season = parseInt(parts[parts.length - 1]);
         const lastSpaceIndex = anime.name.lastIndexOf(' ');
+
+        let match = null;
         if (!isNaN(season) && season > 1) {
             const titleWithoutSeason = anime.name.substring(0, lastSpaceIndex);
             const exclamations = '!'.repeat(season - 1);
             const nameWithExclamation = titleWithoutSeason + exclamations;
 
-            let match = this.applyMatchers(
+            match = this.applyMatchers(
                 animes,
                 { ...anime, name: nameWithExclamation },
                 this.defaultMatchers
@@ -170,18 +180,36 @@ export class AnimeMatcher {
                     (a) => a.name.startsWith(titleWithoutSeason) && a.name.endsWith(exclamations)
                 );
             }
-
-            return match;
         }
+
+        return { anime: match, guessed: true };
     }
 
-    private matchColonSections(animes: Anime[], anime: Anime): Anime {
+    private matchNameParts(animes: Anime[], anime: Anime): AnimeMatch {
+        const parts = this.normalizeAnimeName(anime.name).split(' ');
+        let match = null;
+        if (parts.length > 5) {
+            match = animes.find((a) => {
+                const set = new Set(this.normalizeAnimeName(a.name).split(' '));
+                parts.forEach((x) => set.add(x));
+
+                return set.size - 2 <= parts.length;
+            });
+        }
+
+        return { anime: match, guessed: true };
+    }
+
+    private matchColonSections(animes: Anime[], anime: Anime): AnimeMatch {
         const colonSections = anime.name.split(':').map((x) => x.trim());
-        return colonSections
+        const found = colonSections
             .map((a) => this.applyMatchers(animes, { ...anime, name: a }, this.extraMatchers).anime)
             .find((x) => !!x);
+        return { anime: found, guessed: true };
     }
 }
+
+type AnimeMatcherType = (aa: Anime[], a: Anime) => AnimeMatch;
 
 export interface AnimeMatch {
     anime?: Anime;

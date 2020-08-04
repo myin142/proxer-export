@@ -26,10 +26,13 @@ export class ProxerAdapter implements AnimeAdapter<ProxerExport> {
 
     private toAnimeType(t: animeType): AnimeType {
         switch (t) {
+            case 'Animeserie TV':
             case 'Animeserie':
                 return AnimeType.Series;
             case 'Movie':
                 return AnimeType.Movie;
+            case 'Animeserie ONA':
+                return AnimeType.ONA;
         }
     }
 
@@ -49,7 +52,7 @@ export class ProxerAdapter implements AnimeAdapter<ProxerExport> {
 
 export type ProxerExport = { [k in status]: ProxerAnime[] };
 type status = 'geschaut' | 'am-schauen' | 'wird-noch-geschaut' | 'abgebrochen';
-type animeType = 'Animeserie' | 'Movie';
+type animeType = 'Animeserie TV' | 'Animeserie' | 'Animeserie ONA' | 'Movie';
 
 export interface ProxerAnime {
     name: string;

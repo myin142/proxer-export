@@ -21,4 +21,5 @@ export enum AnimeStatus {
 export enum AnimeType {
     Series,
     Movie,
+    ONA,
 }

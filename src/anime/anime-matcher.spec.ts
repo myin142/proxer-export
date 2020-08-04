@@ -33,7 +33,7 @@ describe('Anime Matcher', () => {
             })
         ).toEqual({
             anime: { name: 'Clanned: After Story' },
-            guessed: true,
+            guessed: false,
         });
     });
 
@@ -44,7 +44,7 @@ describe('Anime Matcher', () => {
             })
         ).toEqual({
             anime: { name: 'Dumbbell Nan Kilo Moteru?' },
-            guessed: true,
+            guessed: false,
         });
     });
 
@@ -88,7 +88,7 @@ describe('Anime Matcher', () => {
             })
         ).toEqual({
             anime: { name: 'Himouto! Umaru-chan R' },
-            guessed: true,
+            guessed: false,
         });
     });
 
@@ -99,7 +99,7 @@ describe('Anime Matcher', () => {
             })
         ).toEqual({
             anime: { name: 'Hanasaku Iroha' },
-            guessed: true,
+            guessed: false,
         });
     });
 
@@ -121,6 +121,20 @@ describe('Anime Matcher', () => {
             })
         ).toEqual({
             anime: { name: 'Karakai Jouzu no Takagi-san 2' },
+            guessed: true,
+        });
+    });
+
+    it('match name parts', () => {
+        expect(
+            AnimeMatcher.findBestMatch(
+                [{ name: 'Isekai Maou to Shoukan Shoujo no Dorei Majutsu' }],
+                {
+                    name: 'Isekai Maou to Shoukan Shoujo Dorei Majutsu',
+                }
+            )
+        ).toEqual({
+            anime: { name: 'Isekai Maou to Shoukan Shoujo no Dorei Majutsu' },
             guessed: true,
         });
     });

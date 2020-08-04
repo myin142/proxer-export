@@ -68,6 +68,8 @@ export class MyAnimeListAdapter implements AnimeAdapter<any> {
                 return AnimeType.Movie;
             case 'TV':
                 return AnimeType.Series;
+            case 'ONA':
+                return AnimeType.ONA;
         }
     }
 
@@ -99,4 +101,4 @@ export interface MyAnimeListAnime {
 }
 
 type status = 'On-Hold' | 'Plan to Watch' | 'Completed' | 'Dropped' | 'Watching';
-export type animeType = 'TV' | 'Movie';
+export type animeType = 'TV' | 'Movie' | 'ONA';
