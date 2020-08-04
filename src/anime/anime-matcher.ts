@@ -40,6 +40,7 @@ export class AnimeMatcher {
             this.matchIgnoreSpecialCharacters.bind(this),
             this.matchSpaceBetweenCapitalized.bind(this),
             this.matchCombinedSpecialCharacters.bind(this),
+            this.matchAllCombinedName.bind(this),
             this.matchExclamationAsSeasons.bind(this),
             this.matchSeasonAliases.bind(this),
             this.matchNameParts.bind(this),
@@ -131,6 +132,27 @@ export class AnimeMatcher {
             { ...anime, name: combinedSpecial },
             this.defaultMatchers
         );
+    }
+
+    private matchAllCombinedName(animes: Anime[], anime: Anime): AnimeMatch {
+        const joined = this.normalizeAnimeName(anime.name).split(' ').join('');
+        const animesJoined = animes.map((a) => ({
+            ...a,
+            name: this.normalizeAnimeName(a.name).split(' ').join(''),
+        }));
+        let match = this.applyMatchers(
+            animesJoined,
+            { ...anime, name: joined },
+            this.defaultMatchers
+        );
+
+        if (match.anime) {
+            match.anime = animes.find(
+                (a) => this.normalizeAnimeName(a.name).split(' ').join('') === match.anime.name
+            );
+        }
+
+        return { anime: match.anime, guessed: true };
     }
 
     private matchSeasonAliases(animes: Anime[], anime: Anime): AnimeMatch {

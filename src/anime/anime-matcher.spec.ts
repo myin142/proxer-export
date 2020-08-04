@@ -138,4 +138,15 @@ describe('Anime Matcher', () => {
             guessed: true,
         });
     });
+
+    it('match all joined', () => {
+        expect(
+            AnimeMatcher.findBestMatch([{ name: 'Nagi no Asu kara' }], {
+                name: 'Nagi no Asukara',
+            })
+        ).toEqual({
+            anime: { name: 'Nagi no Asu kara' },
+            guessed: true,
+        });
+    });
 });
